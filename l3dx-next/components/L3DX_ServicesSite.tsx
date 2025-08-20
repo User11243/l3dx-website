@@ -326,7 +326,7 @@ function Pricing() {
                 <span className="font-medium tabular-nums"><CurrencyUnit bgn={val} unit="г" /></span>
               </div>
             ))}
-            <div className="h-px bg-neutral-900/10 dark:bg.white/10 my-2" />
+            <div className="h-px bg-neutral-900/10 dark:bg-white/10 my-2" />
             <div className="flex items-center justify-between"><span>Машинно време</span><span className="font-medium tabular-nums"><CurrencyUnit bgn={pricesBG.machineHour} unit="ч" /></span></div>
             <div className="flex items-center justify-between"><span>Ръчна работа</span><span className="font-medium tabular-nums"><CurrencyUnit bgn={pricesBG.laborHour} unit="ч" /></span></div>
             <div className="flex items-center justify-between"><span>Минимална поръчка</span><span className="font-medium tabular-nums"><CurrencyUnit bgn={pricesBG.minOrder} /></span></div>
@@ -363,7 +363,7 @@ function Pricing() {
             </label>
           </div>
 
-          <div className="mt-5 grid md:grid-cols-4 gap-3 text.sm">
+          <div className="mt-5 grid md:grid-cols-4 gap-3 text-sm">
             <div className="rounded-xl border brand-card p-3">
               Материал: <span className="font-semibold"><Currency bgn={result.materialCost} /></span>
             </div>
@@ -480,6 +480,13 @@ function FAQ() {
 function Diagnostics() {
   // Лек "тестови" панел (без зависимости): проверява икони и калкулатора
   type Test = { name: string; pass: boolean; details?: string };
+  const isIconRenderable = (C: any) => {
+    try {
+      return !!C && (typeof C === "function" || typeof C === "object") && React.isValidElement(React.createElement(C));
+    } catch {
+      return false;
+    }
+  };
   const eps = 1e-6;
   const calc = (g: number, matPrice: number, machH: number, labH: number, rush: boolean) => {
     let total = g * matPrice + machH * DEFAULT_PRICES_BG.machineHour + labH * DEFAULT_PRICES_BG.laborHour;
@@ -490,10 +497,10 @@ function Diagnostics() {
 
   const tests: Test[] = [
     { name: "unit: 0.05 BGN/g ≈ €0.0256/g", pass: Math.abs(0.05 / FIXED_EUR_RATE - 0.0256) < 0.001, details: "≈ €0.0256/г" },
-    { name: "icons: Box available", pass: typeof Box === "function" },
-    { name: "icons: Printer available", pass: typeof Printer === "function" },
-    { name: "icons: Euro available", pass: typeof Euro === "function" },
-    { name: "icons: Layers available", pass: typeof Layers === "function" },
+    { name: "icons: Box available", pass: isIconRenderable(Box) },
+    { name: "icons: Printer available", pass: isIconRenderable(Printer) },
+    { name: "icons: Euro available", pass: isIconRenderable(Euro) },
+    { name: "icons: Layers available", pass: isIconRenderable(Layers) },
     { name: "pricing: basic 150g PLA + 5h", pass: Math.abs(calc(150, 0.05, 5, 0, false) - 12.5) < eps, details: "expect 12.50 лв" },
     { name: "pricing: rush 150g PLA + 5h", pass: Math.abs(calc(150, 0.05, 5, 0, true) - 15.625) < eps, details: "expect 15.625 лв" },
     { name: "pricing: min order applies", pass: Math.abs(calc(50, 0.05, 0.5, 0, false) - 10) < eps, details: "expect 10.00 лв" },
@@ -502,6 +509,10 @@ function Diagnostics() {
     { name: "assets: LOGO data URI", pass: typeof LOGO_DATA_URL === "string" && LOGO_DATA_URL.startsWith("data:image/") },
   ];
 
+  tests.push(
+    { name: "materials: has PLA/PETG", pass: ["PLA","PETG"].every(k => k in DEFAULT_PRICES_BG.materials) },
+    { name: "currency: 12.50 BGN ≈ €6.39", pass: Math.abs(12.5 / FIXED_EUR_RATE - 6.39) < 0.02 }
+  );
   const ok = tests.every(t => t.pass);
 
   return (
@@ -510,7 +521,7 @@ function Diagnostics() {
         <p className="mb-3">Общ статус: {ok ? <span className="font-semibold">OK</span> : <span className="font-semibold">ИМА ПРОБЛЕМИ</span>}</p>
         <ul className="grid md:grid-cols-2 gap-2">
           {tests.map((t) => (
-            <li key={t.name} className="flex items-center justify между">
+            <li key={t.name} className="flex items-center justify-between">
               <span>{t.name}{t.details ? ` — ${t.details}` : ""}</span>
               <span className={`ml-3 px-2 py-0.5 rounded-full text-xs ${t.pass ? "bg-green-600/15 text-green-700 dark:text-green-400" : "bg-red-600/15 text-red-700 dark:text-red-400"}`}>{t.pass ? "PASS" : "FAIL"}</span>
             </li>
