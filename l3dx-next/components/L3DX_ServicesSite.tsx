@@ -1,3 +1,5 @@
+"use client";
+
 import React, { useMemo, useState, useEffect } from "react";
 import { Box, Printer, Boxes, Wrench, Mail, Upload, Link as LinkIcon, Calculator, CheckCircle2, HelpCircle, Shield, Palette, Ruler, Timer, Package, Euro, Cpu, Hammer, Layers, RefreshCcw, Sun, Moon } from "lucide-react";
 
