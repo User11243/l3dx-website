@@ -573,8 +573,7 @@ export default function L3DX_ServicesSite() {
       <Pricing />
       <Order />
       <FAQ />
-      <Diagnostics />
-      <Contacts />
+<Contacts />
       <Footer />
       {/* Sticky CTA */}
       <a href="#order" className="fixed bottom-5 right-5 inline-flex items-center gap-2 btn-primary shadow-lg">
