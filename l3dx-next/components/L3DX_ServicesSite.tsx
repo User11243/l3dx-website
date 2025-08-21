@@ -50,7 +50,7 @@ const themeCSS = `
   .nav-link.active{ color: var(--brand-accent); font-weight:600; }
 `;
 
-// Вградено лого като data URL (временно). Ще го заменим с PNG/SVG файл, когато качиш логото на хостинг.
+// Лого: по подразбиране търси файл от public/logo.jpg. Ако липсва или гръмне зареждането — пада обратно към вграденото data URI.
 const LOGO_DATA_URL =
   "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD/2wBDAAMCAgMCA" +
   "gMCAgMECAgMEBQgFBQQEBQoHBwYIDAoMDAsKCwsNDhIQDQ4RDgsLEBYQERMUFRUVDA8XGBYUGBIU" +
@@ -143,10 +143,8 @@ const SECTIONS = [
   { id: "contacts", label: "Контакти" },
 ];
 
-function Nav() {
-  const [open, setOpen] = useState(false);
-  const [dark, setDark] = useState(false);
-  const [active, setActive] = useState<string>("services");
+function Nav() {$1const [active, setActive] = useState<string>("services");
+  const [logoSrc, setLogoSrc] = useState<string>("/logo.jpg"); // опит за public/logo.jpg с fallback към LOGO_DATA_URL
 
   useEffect(() => {
     const root = document.documentElement;
@@ -191,8 +189,7 @@ function Nav() {
     <header className="sticky top-0 z-50 border-b border-transparent brand-gradient text-white shadow">
       <div className="mx-auto max-w-7xl px-4 h-16 flex items-center justify-between">
         <a href="#hero" className="flex items-center gap-2 font-bold text-xl">
-          <img
-            src={LOGO_DATA_URL}
+          <img src={logoSrc} onError={() => setLogoSrc(LOGO_DATA_URL)}
             alt="L3DX"
             className="h-8 w-8 rounded-full ring-1 ring-white/30 object-cover"
           />
