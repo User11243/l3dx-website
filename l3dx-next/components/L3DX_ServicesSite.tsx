@@ -370,17 +370,30 @@ function Materials() {
   );
 }
 
+// Помощна функция: парсва инпут низ → неотрицателно число. Празен низ → 0.
+function parseInputNumber(s: string): number {
+  if (s == null || s.trim() === "") return 0;
+  const n = Number(String(s).replace(",", "."));
+  if (!isFinite(n) || n < 0) return 0;
+  return n;
+}
+
 function Pricing() {
   const [pricesBG, setPricesBG] = useState(DEFAULT_PRICES_BG);
+  // 👉 Държим стойностите като НИЗОВЕ, за да позволим празно поле ("") без автоматично "0"
   const [mat, setMat] = useState<keyof typeof DEFAULT_PRICES_BG.materials>("PLA");
-  const [grams, setGrams] = useState(150);
-  const [machineH, setMachineH] = useState(5);
-  const [laborH, setLaborH] = useState(0);
+  const [gramsStr, setGramsStr] = useState("150");
+  const [machineHStr, setMachineHStr] = useState("5");
+  const [laborHStr, setLaborHStr] = useState("0");
   const [rush, setRush] = useState(false);
 
   const materialPrice = pricesBG.materials[mat];
 
   const result = useMemo(() => {
+    const grams = parseInputNumber(gramsStr);
+    const machineH = parseInputNumber(machineHStr);
+    const laborH = parseInputNumber(laborHStr);
+
     const materialCost = grams * materialPrice;
     const machineCost = machineH * pricesBG.machineHour;
     const laborCost = laborH * pricesBG.laborHour;
@@ -389,13 +402,16 @@ function Pricing() {
     if (total < pricesBG.minOrder) total = pricesBG.minOrder;
     const eur = total / FIXED_EUR_RATE;
     return {
+      grams,
+      machineH,
+      laborH,
       materialCost,
       machineCost,
       laborCost,
       total,
       eur,
     };
-  }, [grams, machineH, laborH, rush, materialPrice, pricesBG]);
+  }, [gramsStr, machineHStr, laborHStr, rush, materialPrice, pricesBG]);
 
   return (
     <Section
@@ -468,8 +484,8 @@ function Pricing() {
               <input
                 type="number"
                 min={0}
-                value={grams}
-                onChange={(e) => setGrams(Math.max(0, Number(e.target.value)))}
+                value={gramsStr}
+                onChange={(e) => setGramsStr(e.target.value)}
                 className="rounded-xl border border-neutral-900/10 dark:border-white/10 bg-transparent px-3 py-2"
               />
             </label>
@@ -478,8 +494,8 @@ function Pricing() {
               <input
                 type="number"
                 min={0}
-                value={machineH}
-                onChange={(e) => setMachineH(Math.max(0, Number(e.target.value)))}
+                value={machineHStr}
+                onChange={(e) => setMachineHStr(e.target.value)}
                 className="rounded-xl border border-neutral-900/10 dark:border-white/10 bg-transparent px-3 py-2"
               />
             </label>
@@ -488,8 +504,8 @@ function Pricing() {
               <input
                 type="number"
                 min={0}
-                value={laborH}
-                onChange={(e) => setLaborH(Math.max(0, Number(e.target.value)))}
+                value={laborHStr}
+                onChange={(e) => setLaborHStr(e.target.value)}
                 className="rounded-xl border border-neutral-900/10 dark:border-white/10 bg-transparent px-3 py-2"
               />
             </label>
@@ -788,6 +804,10 @@ function Diagnostics() {
     {
       name: "logo: inline data url fallback looks valid",
       pass: LOGO_DATA_URL.startsWith("data:image/"),
+    },
+    {
+      name: "parser: empty input parses to 0",
+      pass: parseInputNumber("") === 0 && parseInputNumber("   ") === 0,
     },
   ];
 
