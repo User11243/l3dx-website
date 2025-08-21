@@ -2,7 +2,6 @@
 
 import React, { useMemo, useState, useEffect } from "react";
 import {
-  Box,
   Printer,
   Boxes,
   Wrench,
@@ -143,15 +142,33 @@ const SECTIONS = [
   { id: "contacts", label: "Контакти" },
 ];
 
-function Nav() {$1const [active, setActive] = useState<string>("services");
+function Nav() {
+  const [active, setActive] = useState<string>("services");
   const [logoSrc, setLogoSrc] = useState<string>("/logo.jpg"); // опит за public/logo.jpg с fallback към LOGO_DATA_URL
+  const [open, setOpen] = useState(false);
+  const [dark, setDark] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    return document.documentElement.classList.contains("dark");
+  });
 
+  // при смяна на тема — добавя/махa "dark" клас и пази в localStorage
   useEffect(() => {
     const root = document.documentElement;
     if (dark) root.classList.add("dark");
     else root.classList.remove("dark");
+    try { localStorage.setItem("theme", dark ? "dark" : "light"); } catch {}
   }, [dark]);
 
+  // възстановяване на тема от localStorage
+  useEffect(() => {
+    try {
+      const t = localStorage.getItem("theme");
+      if (t === "dark") setDark(true);
+      if (t === "light") setDark(false);
+    } catch {}
+  }, []);
+
+  // подсветка на активната секция при скрол
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
@@ -189,7 +206,9 @@ function Nav() {$1const [active, setActive] = useState<string>("services");
     <header className="sticky top-0 z-50 border-b border-transparent brand-gradient text-white shadow">
       <div className="mx-auto max-w-7xl px-4 h-16 flex items-center justify-between">
         <a href="#hero" className="flex items-center gap-2 font-bold text-xl">
-          <img src={logoSrc} onError={() => setLogoSrc(LOGO_DATA_URL)}
+          <img
+            src={logoSrc}
+            onError={() => setLogoSrc(LOGO_DATA_URL)}
             alt="L3DX"
             className="h-8 w-8 rounded-full ring-1 ring-white/30 object-cover"
           />
@@ -489,7 +508,7 @@ function Pricing() {
             <div className="rounded-xl border brand-card p-3">
               Ръчна работа: <span className="font-semibold"><Currency bgn={result.laborCost} /></span>
             </div>
-            <div className="rounded-xl border brand-card p-3 bg-neutral-50 dark:bg:white/5">
+            <div className="rounded-xl border brand-card p-3 bg-neutral-50 dark:bg-white/5">
               Общо: <span className="font-semibold text-lg"><Currency bgn={result.total} /></span>
             </div>
           </div>
@@ -611,7 +630,7 @@ function Order() {
           </form>
         </div>
         <div className="rounded-2xl border brand-card p-5">
-          <h3 className="font-semibold text-lg flex items	center gap-2">
+          <h3 className="font-semibold text-lg flex items-center gap-2">
             <Shield className="h-5 w-5" /> Политики
           </h3>
           <ul className="mt-3 space-y-2 text-sm">
@@ -723,6 +742,17 @@ function Diagnostics() {
     try { return !!C && React.isValidElement(React.createElement(C as any)); } catch { return false; }
   };
 
+  // Допълнителни малки тестове за регресии
+  const sampleCalcTotalBGN = (() => {
+    const grams = 150; // г
+    const material = DEFAULT_PRICES_BG.materials.PLA; // 0.05 лв/г
+    const machine = 5 * DEFAULT_PRICES_BG.machineHour; // 5 лв
+    const labor = 0;
+    let total = grams * material + machine + labor; // 7.5 + 5 = 12.5 лв
+    if (total < DEFAULT_PRICES_BG.minOrder) total = DEFAULT_PRICES_BG.minOrder;
+    return total; // 12.5
+  })();
+
   const tests: Test[] = [
     {
       name: "unit: 0.05 BGN/g ≈ €0.0256/g",
@@ -735,12 +765,29 @@ function Diagnostics() {
     },
     {
       name: "currency: 19.5583 BGN ≈ €10.00",
-      pass: approx(19.5583 / FIXED_EUR_RATE, 10.0 / FIXED_EUR_RATE * FIXED_EUR_RATE / FIXED_EUR_RATE, 1e-2),
+      pass: approx(19.5583 / FIXED_EUR_RATE, 10.0, 1e-2),
       details: `€${(19.5583 / FIXED_EUR_RATE).toFixed(2)}`,
     },
     {
       name: "assets: PRINTER_IMG string",
       pass: typeof PRINTER_IMG === "string" && PRINTER_IMG.length > 0,
+    },
+    {
+      name: "calc: sample total BGN == 12.5",
+      pass: approx(sampleCalcTotalBGN, 12.5, 1e-6),
+      details: `${sampleCalcTotalBGN.toFixed(2)} лв`,
+    },
+    {
+      name: "style: themeCSS contains --brand-accent",
+      pass: typeof themeCSS === "string" && themeCSS.includes("--brand-accent"),
+    },
+    {
+      name: "dom: sections present",
+      pass: typeof document !== "undefined" && SECTIONS.every((s) => !!document.getElementById(s.id)),
+    },
+    {
+      name: "logo: inline data url fallback looks valid",
+      pass: LOGO_DATA_URL.startsWith("data:image/"),
     },
   ];
 
