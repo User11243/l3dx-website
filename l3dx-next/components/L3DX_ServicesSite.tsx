@@ -271,7 +271,7 @@ function Hero() {
             <figure className="rounded-3xl overflow-hidden border brand-card bg-black/5">
               <img src={PRINTER_IMG} alt="Нашият 3D принтер" loading="lazy" className="w-full h-auto object-cover" />
             </figure>
-            <p className=\"mt-3 text-xs opacity-70\">Реалният принтер, с който работим.<\/p>
+            <p className="mt-3 text-xs opacity-70">Реалният принтер, с който работим.</p>
           </div>
         </div>
       </div>
@@ -492,7 +492,7 @@ function Pricing() {
             <div className="rounded-xl border brand-card p-3">
               Ръчна работа: <span className="font-semibold"><Currency bgn={result.laborCost} /></span>
             </div>
-            <div className="rounded-xl border brand-card p-3 bg-neutral-50 dark:bg-white/5">
+            <div className="rounded-xl border brand-card p-3 bg-neutral-50 dark:bg:white/5">
               Общо: <span className="font-semibold text-lg"><Currency bgn={result.total} /></span>
             </div>
           </div>
@@ -614,7 +614,7 @@ function Order() {
           </form>
         </div>
         <div className="rounded-2xl border brand-card p-5">
-          <h3 className="font-semibold text-lg flex items-center gap-2">
+          <h3 className="font-semibold text-lg flex items	center gap-2">
             <Shield className="h-5 w-5" /> Политики
           </h3>
           <ul className="mt-3 space-y-2 text-sm">
@@ -706,6 +706,66 @@ function Footer() {
   );
 }
 
+// ===== Мини тестове / диагностика (само в dev режим) =====
+function Diagnostics() {
+  const [enabled, setEnabled] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const p = new URLSearchParams(window.location.search);
+      if (p.get("dev") === "1") setEnabled(true);
+    }
+  }, []);
+
+  if (!enabled) return null;
+
+  type Test = { name: string; pass: boolean; details?: string };
+
+  const approx = (a: number, b: number, eps = 1e-3) => Math.abs(a - b) < eps;
+  const isRenderable = (C: any) => {
+    try { return !!C && React.isValidElement(React.createElement(C as any)); } catch { return false; }
+  };
+
+  const tests: Test[] = [
+    {
+      name: "unit: 0.05 BGN/g ≈ €0.0256/g",
+      pass: approx(0.05 / FIXED_EUR_RATE, 0.02556, 1e-3),
+      details: `≈ €${(0.05 / FIXED_EUR_RATE).toFixed(4)}/g`,
+    },
+    {
+      name: "icons: Printer renderable",
+      pass: isRenderable(Printer),
+    },
+    {
+      name: "currency: 19.5583 BGN ≈ €10.00",
+      pass: approx(19.5583 / FIXED_EUR_RATE, 10.0 / FIXED_EUR_RATE * FIXED_EUR_RATE / FIXED_EUR_RATE, 1e-2),
+      details: `€${(19.5583 / FIXED_EUR_RATE).toFixed(2)}`,
+    },
+    {
+      name: "assets: PRINTER_IMG string",
+      pass: typeof PRINTER_IMG === "string" && PRINTER_IMG.length > 0,
+    },
+  ];
+
+  const allOk = tests.every((t) => t.pass);
+
+  return (
+    <section className="mx-auto max-w-7xl px-4 py-6">
+      <div className={`rounded-2xl border p-5 ${allOk ? "border-emerald-400/50" : "border-red-400/50"}`}>
+        <h3 className="font-semibold mb-3">Тестове (dev)</h3>
+        <ul className="space-y-2 text-sm">
+          {tests.map((t) => (
+            <li key={t.name}>
+              <span className={`inline-block min-w-16 text-center rounded px-2 py-0.5 mr-2 text-xs ${t.pass ? "bg-emerald-500/20 text-emerald-600" : "bg-red-500/20 text-red-600"}`}>{t.pass ? "PASS" : "FAIL"}</span>
+              {t.name} {t.details ? <span className="opacity-60">— {t.details}</span> : null}
+            </li>
+          ))}
+        </ul>
+      </div>
+    </section>
+  );
+}
+
 export default function L3DX_ServicesSite() {
   return (
     <main className="text-neutral-900 dark:text-neutral-200 bg-white dark:bg-neutral-900">
@@ -719,6 +779,7 @@ export default function L3DX_ServicesSite() {
       <FAQ />
       <Contacts />
       <Footer />
+      <Diagnostics />
       {/* Sticky CTA */}
       <a href="#order" className="fixed bottom-5 right-5 inline-flex items-center gap-2 btn-primary shadow-lg">
         <Printer className="h-4 w-4" /> Поръчай печат
