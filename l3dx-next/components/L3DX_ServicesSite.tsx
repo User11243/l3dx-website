@@ -87,7 +87,8 @@ const DEFAULT_PRICES_BG = {
 };
 
 function BrandTheme() {
-  return <style jsx global>{themeCSS}</style>;
+  // Използваме стандартен <style> с dangerouslySetInnerHTML, за да е валидно и извън Next/styled-jsx среда
+  return <style dangerouslySetInnerHTML={{ __html: themeCSS }} />;
 }
 
 function Currency({ bgn }: { bgn: number }) {
@@ -146,29 +147,50 @@ function Nav() {
   const [active, setActive] = useState<string>("services");
   const [logoSrc, setLogoSrc] = useState<string>("/logo.jpg"); // опит за public/logo.jpg с fallback към LOGO_DATA_URL
   const [open, setOpen] = useState(false);
-  const [dark, setDark] = useState<boolean>(() => {
-    if (typeof window === "undefined") return false;
-    return document.documentElement.classList.contains("dark");
-  });
+  // Тема: light / dark / auto (по системни настройки)
+  const [theme, setTheme] = useState<"light" | "dark" | "auto">("auto");
 
-  // при смяна на тема — добавя/махa "dark" клас и пази в localStorage
-  useEffect(() => {
+  const applyTheme = (mode: "light" | "dark" | "auto") => {
     const root = document.documentElement;
-    if (dark) root.classList.add("dark");
-    else root.classList.remove("dark");
-    try { localStorage.setItem("theme", dark ? "dark" : "light"); } catch {}
-  }, [dark]);
+    if (mode === "auto") {
+      const prefersDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+      root.classList.toggle("dark", prefersDark);
+    } else {
+      root.classList.toggle("dark", mode === "dark");
+    }
+  };
 
-  // възстановяване на тема от localStorage
+  // Начална стойност от localStorage или AUTO
   useEffect(() => {
     try {
-      const t = localStorage.getItem("theme");
-      if (t === "dark") setDark(true);
-      if (t === "light") setDark(false);
-    } catch {}
+      const saved = localStorage.getItem("themeMode");
+      if (saved === "light" || saved === "dark" || saved === "auto") {
+        setTheme(saved);
+      } else {
+        setTheme("auto");
+      }
+    } catch {
+      setTheme("auto");
+    }
   }, []);
 
-  // подсветка на активната секция при скрол
+  // При промяна на режима — прилагаме и запазваме
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    applyTheme(theme);
+    try { localStorage.setItem("themeMode", theme); } catch {}
+  }, [theme]);
+
+  // Следим системните настройки при AUTO
+  useEffect(() => {
+    if (theme !== "auto") return;
+    const mql = window.matchMedia("(prefers-color-scheme: dark)");
+    const handler = () => applyTheme("auto");
+    try { mql.addEventListener("change", handler); } catch { mql.addListener(handler); }
+    return () => { try { mql.removeEventListener("change", handler); } catch { mql.removeListener(handler); } };
+  }, [theme]);
+
+  // Подсветка на активната секция при скрол
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
@@ -202,6 +224,10 @@ function Nav() {
     </>
   );
 
+  const cycleTheme = () => setTheme((t) => (t === "auto" ? "light" : t === "light" ? "dark" : "auto"));
+  const ThemeIcon = theme === "dark" ? Moon : Sun;
+  const themeLabel = theme === "auto" ? "Авто" : theme === "dark" ? "Тъмна" : "Светла";
+
   return (
     <header className="sticky top-0 z-50 border-b border-transparent brand-gradient text-white shadow">
       <div className="mx-auto max-w-7xl px-4 h-16 flex items-center justify-between">
@@ -218,11 +244,11 @@ function Nav() {
           <NavLinks />
           <div className="h-5 w-px bg-white/20" />
           <button
-            onClick={() => setDark(!dark)}
+            onClick={cycleTheme}
             className="inline-flex items-center gap-2 text-sm px-3 py-1.5 rounded-xl border border-white/30 hover:bg-white/10"
           >
-            {dark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-            <span className="hidden lg:inline">Тема</span>
+            <ThemeIcon className="h-4 w-4" />
+            <span className="hidden lg:inline">Тема: {themeLabel}</span>
           </button>
           <a href="#order" className="inline-flex items-center gap-2 text-sm btn-primary">
             <Printer className="h-4 w-4" /> Поръчай
@@ -241,11 +267,11 @@ function Nav() {
             <NavLinks className="py-2" />
             <div className="pt-2 flex items-center gap-3">
               <button
-                onClick={() => setDark(!dark)}
+                onClick={cycleTheme}
                 className="inline-flex items-center gap-2 text-sm px-3 py-1.5 rounded-xl border border-white/30"
               >
-                {dark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-                Тема
+                <ThemeIcon className="h-4 w-4" />
+                Тема: {themeLabel}
               </button>
               <a href="#order" className="inline-flex items-center gap-2 text-sm btn-primary">
                 <Printer className="h-4 w-4" /> Поръчай
@@ -344,28 +370,133 @@ function Services() {
 
 function Materials() {
   const mats = [
-    { name: "PLA", note: "Декорации, прототипи, ниско натоварване", icon: Palette },
-    { name: "PETG", note: "Функционални части, умерена температура (до ~80°C)", icon: Shield },
-    { name: "ABS", note: "Здравина, следобработка с ацетон, устойчивост", icon: Hammer },
-    { name: "ASA", note: "UV устойчивост за външна среда", icon: Sun },
-    { name: "TPU", note: "Гъвкави детайли, омекотители", icon: RefreshCcw },
+    {
+      name: "PLA",
+      note: "Лесен печат, ниска усадка — прототипи/декорации",
+      icon: Palette,
+      settings: { nozzle: "190–210°C", bed: "0–60°C", layer: "0.16–0.28 мм", infill: "15–40%" },
+      uses: "Прототипи, макети, стойки, джаджи за дома",
+      quirks: "Неустойчив на висока температура/UV",
+    },
+    {
+      name: "PETG",
+      note: "Здрав и устойчив, понася ~80°C",
+      icon: Shield,
+      settings: { nozzle: "220–250°C", bed: "60–85°C", layer: "0.20–0.32 мм", infill: "20–60%" },
+      uses: "Функционални части, външни приложения с умерено слънце",
+      quirks: "Има тенденция към 'stringing' — по-бавни скорости",
+    },
+    {
+      name: "ABS",
+      note: "Здравина и следобработка с ацетон",
+      icon: Hammer,
+      settings: { nozzle: "230–260°C", bed: "90–110°C", layer: "0.20–0.32 мм", infill: "20–60%" },
+      uses: "Капаци, корпуси, технически детайли",
+      quirks: "Иска топло легло/шкаф, може да мирише",
+    },
+    {
+      name: "ASA",
+      note: "ABS-подобен, UV устойчив за външна среда",
+      icon: Sun,
+      settings: { nozzle: "240–260°C", bed: "90–110°C", layer: "0.20–0.32 мм", infill: "20–60%" },
+      uses: "Външни детайли, авто/градина, табелки",
+      quirks: "По-стабилен на слънце от ABS",
+    },
+    {
+      name: "TPU",
+      note: "Гъвкав материал (shore 85A–98A)",
+      icon: RefreshCcw,
+      settings: { nozzle: "210–240°C", bed: "0–60°C", layer: "0.20–0.32 мм", infill: "15–35%" },
+      uses: "Буфери, уплътнения, калъфи, виброизолации",
+      quirks: "Бавен печат; препоръчителен директ-драйв екструдер",
+    },
   ];
 
   return (
-    <Section id="materials" title="Материали" subtitle="Подбираме материала според целта — декоративно, функционално, за вън или с гъвкавост.">
+    <Section id="materials" title="Материали" subtitle="Разширена информация и препоръчани настройки за най-често използваните пластмаси.">
       <div className="grid sm:grid-cols-2 lg:grid-cols-5 gap-4 md:gap-6">
         {mats.map((m) => (
-          <div key={m.name} className="rounded-2xl border brand-card p-5">
+          <div key={m.name} data-mat-card className="rounded-2xl border brand-card p-5">
             <m.icon className="h-7 w-7" />
             <h3 className="mt-3 font-semibold">{m.name}</h3>
             <p className="mt-2 text-sm opacity-80">{m.note}</p>
+            <details className="mt-3 text-sm">
+              <summary className="cursor-pointer opacity-80">Повече</summary>
+              <ul className="mt-2 space-y-1">
+                <li><span className="opacity-60">Приложения:</span> {m.uses}</li>
+                <li><span className="opacity-60">Препоръчани настройки:</span> дюза {m.settings.nozzle}, легло {m.settings.bed}, слой {m.settings.layer}, запълване {m.settings.infill}</li>
+                <li><span className="opacity-60">Особености:</span> {m.quirks}</li>
+              </ul>
+            </details>
           </div>
         ))}
       </div>
-      <p className="mt-4 text-sm opacity-70">
-        * Предлагаме и по-специални пластмаси при запитване (напр. усилени с влакна). Толеранси по подразбиране: ±0.2 мм за
-        стандартни детайли.
-      </p>
+
+      {/* Сравнителна таблица */}
+      <div className="mt-6 overflow-x-auto">
+        <table className="w-full text-sm border-collapse">
+          <thead>
+            <tr className="text-left">
+              <th className="py-2 pr-4">Материал</th>
+              <th className="py-2 pr-4">Здравина</th>
+              <th className="py-2 pr-4">Топлоуст.</th>
+              <th className="py-2 pr-4">UV</th>
+              <th className="py-2 pr-4">Лесен печат</th>
+              <th className="py-2 pr-4">Гъвкавост</th>
+              <th className="py-2 pr-4">Типични приложения</th>
+            </tr>
+          </thead>
+          <tbody className="align-top opacity-90">
+            <tr>
+              <td className="py-2 pr-4">PLA</td>
+              <td className="py-2 pr-4">средна</td>
+              <td className="py-2 pr-4">ниска (~55–60°C)</td>
+              <td className="py-2 pr-4">ниска</td>
+              <td className="py-2 pr-4">много лесен</td>
+              <td className="py-2 pr-4">не</td>
+              <td className="py-2 pr-4">прототипи, декор</td>
+            </tr>
+            <tr>
+              <td className="py-2 pr-4">PETG</td>
+              <td className="py-2 pr-4">висока</td>
+              <td className="py-2 pr-4">средна (~80°C)</td>
+              <td className="py-2 pr-4">средна</td>
+              <td className="py-2 pr-4">лесен</td>
+              <td className="py-2 pr-4">не</td>
+              <td className="py-2 pr-4">функционални части</td>
+            </tr>
+            <tr>
+              <td className="py-2 pr-4">ABS</td>
+              <td className="py-2 pr-4">висока</td>
+              <td className="py-2 pr-4">висока (≥90°C)</td>
+              <td className="py-2 pr-4">ниска</td>
+              <td className="py-2 pr-4">среден/труден</td>
+              <td className="py-2 pr-4">не</td>
+              <td className="py-2 pr-4">корпуси, капаци</td>
+            </tr>
+            <tr>
+              <td className="py-2 pr-4">ASA</td>
+              <td className="py-2 pr-4">висока</td>
+              <td className="py-2 pr-4">висока (≥90°C)</td>
+              <td className="py-2 pr-4">висока</td>
+              <td className="py-2 pr-4">среден</td>
+              <td className="py-2 pr-4">не</td>
+              <td className="py-2 pr-4">външни детайли</td>
+            </tr>
+            <tr>
+              <td className="py-2 pr-4">TPU</td>
+              <td className="py-2 pr-4">средна</td>
+              <td className="py-2 pr-4">средна (до ~80°C)</td>
+              <td className="py-2 pr-4">средна</td>
+              <td className="py-2 pr-4">среден (бавен печат)</td>
+              <td className="py-2 pr-4">да</td>
+              <td className="py-2 pr-4">омекотители, уплътнения</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p className="mt-4 text-xs opacity-70">* Настройките са ориентировъчни и зависят от марката филaмент, дюза, охлаждане и геометрия.</p>
     </Section>
   );
 }
@@ -808,6 +939,11 @@ function Diagnostics() {
     {
       name: "parser: empty input parses to 0",
       pass: parseInputNumber("") === 0 && parseInputNumber("   ") === 0,
+    },
+    {
+      name: "sections: expected count",
+      pass: SECTIONS.length === 6,
+      details: `${SECTIONS.length} секции`,
     },
   ];
 
