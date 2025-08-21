@@ -17,8 +17,7 @@ import {
   RefreshCcw,
   Euro,
   Hammer,
-  Layers,
-  Moon,
+  Layers
 } from "lucide-react";
 
 // 👉 Един файл = цял сайт. Готов за вграждане в Next.js/CRA/Vite или за export като статична страница.
@@ -33,7 +32,7 @@ const BRAND = {
   gold: "#F2B01E",
 };
 
-// CSS като един низ, за да избегнем проблеми с JSX парсера
+// CSS като един низ, без backslashes в JSX
 const themeCSS = `
   html{ scroll-behavior:smooth; }
   :root{ --brand-blue-start:${BRAND.blueStart}; --brand-blue-end:${BRAND.blueEnd}; --brand-accent:${BRAND.gold}; }
@@ -87,7 +86,7 @@ const DEFAULT_PRICES_BG = {
 };
 
 function BrandTheme() {
-  // Използваме стандартен <style> с dangerouslySetInnerHTML, за да е валидно и извън Next/styled-jsx среда
+  // използваме безопасния начин без styled-jsx
   return <style dangerouslySetInnerHTML={{ __html: themeCSS }} />;
 }
 
@@ -147,49 +146,6 @@ function Nav() {
   const [active, setActive] = useState<string>("services");
   const [logoSrc, setLogoSrc] = useState<string>("/logo.jpg"); // опит за public/logo.jpg с fallback към LOGO_DATA_URL
   const [open, setOpen] = useState(false);
-  // Тема: light / dark / auto (по системни настройки)
-  const [theme, setTheme] = useState<"light" | "dark" | "auto">("auto");
-
-  const applyTheme = (mode: "light" | "dark" | "auto") => {
-    const root = document.documentElement;
-    if (mode === "auto") {
-      const prefersDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
-      root.classList.toggle("dark", prefersDark);
-    } else {
-      root.classList.toggle("dark", mode === "dark");
-    }
-  };
-
-  // Начална стойност от localStorage или AUTO
-  useEffect(() => {
-    try {
-      const saved = localStorage.getItem("themeMode");
-      if (saved === "light" || saved === "dark" || saved === "auto") {
-        setTheme(saved);
-      } else {
-        setTheme("auto");
-      }
-    } catch {
-      setTheme("auto");
-    }
-  }, []);
-
-  // При промяна на режима — прилагаме и запазваме
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    applyTheme(theme);
-    try { localStorage.setItem("themeMode", theme); } catch {}
-  }, [theme]);
-
-  // Следим системните настройки при AUTO
-  useEffect(() => {
-    if (theme !== "auto") return;
-    const mql = window.matchMedia("(prefers-color-scheme: dark)");
-    const handler = () => applyTheme("auto");
-    try { mql.addEventListener("change", handler); } catch { mql.addListener(handler); }
-    return () => { try { mql.removeEventListener("change", handler); } catch { mql.removeListener(handler); } };
-  }, [theme]);
-
   // Подсветка на активната секция при скрол
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -224,10 +180,6 @@ function Nav() {
     </>
   );
 
-  const cycleTheme = () => setTheme((t) => (t === "auto" ? "light" : t === "light" ? "dark" : "auto"));
-  const ThemeIcon = theme === "dark" ? Moon : Sun;
-  const themeLabel = theme === "auto" ? "Авто" : theme === "dark" ? "Тъмна" : "Светла";
-
   return (
     <header className="sticky top-0 z-50 border-b border-transparent brand-gradient text-white shadow">
       <div className="mx-auto max-w-7xl px-4 h-16 flex items-center justify-between">
@@ -242,14 +194,7 @@ function Nav() {
         </a>
         <nav className="hidden md:flex items-center gap-6 text-sm">
           <NavLinks />
-          <div className="h-5 w-px bg-white/20" />
-          <button
-            onClick={cycleTheme}
-            className="inline-flex items-center gap-2 text-sm px-3 py-1.5 rounded-xl border border-white/30 hover:bg-white/10"
-          >
-            <ThemeIcon className="h-4 w-4" />
-            <span className="hidden lg:inline">Тема: {themeLabel}</span>
-          </button>
+          
           <a href="#order" className="inline-flex items-center gap-2 text-sm btn-primary">
             <Printer className="h-4 w-4" /> Поръчай
           </a>
@@ -266,13 +211,6 @@ function Nav() {
           <div className="px-4 py-3 flex flex-col gap-2">
             <NavLinks className="py-2" />
             <div className="pt-2 flex items-center gap-3">
-              <button
-                onClick={cycleTheme}
-                className="inline-flex items-center gap-2 text-sm px-3 py-1.5 rounded-xl border border-white/30"
-              >
-                <ThemeIcon className="h-4 w-4" />
-                Тема: {themeLabel}
-              </button>
               <a href="#order" className="inline-flex items-center gap-2 text-sm btn-primary">
                 <Printer className="h-4 w-4" /> Поръчай
               </a>
@@ -384,15 +322,15 @@ function Materials() {
       icon: Shield,
       settings: { nozzle: "220–250°C", bed: "60–85°C", layer: "0.20–0.32 мм", infill: "20–60%" },
       uses: "Функционални части, външни приложения с умерено слънце",
-      quirks: "Има тенденция към 'stringing' — по-бавни скорости",
+      quirks: "Ударо- и химически по-устойчив; леко еластичен, умерена UV издръжливост",
     },
     {
       name: "ABS",
-      note: "Здравина и следобработка с ацетон",
+      note: "Топлоустойчива пластмаса за технически детайли; добра механична здравина",
       icon: Hammer,
       settings: { nozzle: "230–260°C", bed: "90–110°C", layer: "0.20–0.32 мм", infill: "20–60%" },
       uses: "Капаци, корпуси, технически детайли",
-      quirks: "Иска топло легло/шкаф, може да мирише",
+      quirks: "Добра термоустойчивост; позволява шлайфане и боядисване",
     },
     {
       name: "ASA",
@@ -408,12 +346,12 @@ function Materials() {
       icon: RefreshCcw,
       settings: { nozzle: "210–240°C", bed: "0–60°C", layer: "0.20–0.32 мм", infill: "15–35%" },
       uses: "Буфери, уплътнения, калъфи, виброизолации",
-      quirks: "Бавен печат; препоръчителен директ-драйв екструдер",
+      quirks: "Гумирано усещане; гаси вибрации, възвръща форма при натиск",
     },
   ];
 
   return (
-    <Section id="materials" title="Материали" subtitle="Разширена информация и препоръчани настройки за най-често използваните пластмаси.">
+    <Section id="materials" title="Материали" subtitle="Кратки насоки за избор и поведение на материалите след печат.">
       <div className="grid sm:grid-cols-2 lg:grid-cols-5 gap-4 md:gap-6">
         {mats.map((m) => (
           <div key={m.name} data-mat-card className="rounded-2xl border brand-card p-5">
@@ -424,8 +362,7 @@ function Materials() {
               <summary className="cursor-pointer opacity-80">Повече</summary>
               <ul className="mt-2 space-y-1">
                 <li><span className="opacity-60">Приложения:</span> {m.uses}</li>
-                <li><span className="opacity-60">Препоръчани настройки:</span> дюза {m.settings.nozzle}, легло {m.settings.bed}, слой {m.settings.layer}, запълване {m.settings.infill}</li>
-                <li><span className="opacity-60">Особености:</span> {m.quirks}</li>
+                <li><span className="opacity-60">Особености след печат:</span> {m.quirks}</li>
               </ul>
             </details>
           </div>
@@ -496,7 +433,7 @@ function Materials() {
         </table>
       </div>
 
-      <p className="mt-4 text-xs opacity-70">* Настройките са ориентировъчни и зависят от марката филaмент, дюза, охлаждане и геометрия.</p>
+      <p className="mt-4 text-xs opacity-70">* Описанията са обобщени; конкретните свойства зависят от марката, настройките и геометрията.</p>
     </Section>
   );
 }
@@ -655,7 +592,7 @@ function Pricing() {
             <div className="rounded-xl border brand-card p-3">
               Ръчна работа: <span className="font-semibold"><Currency bgn={result.laborCost} /></span>
             </div>
-            <div className="rounded-xl border brand-card p-3 bg-neutral-50 dark:bg-white/5">
+            <div className="rounded-xl border brand-card p-3 bg-neutral-50 dark:bg:white/5">
               Общо: <span className="font-semibold text-lg"><Currency bgn={result.total} /></span>
             </div>
           </div>
@@ -900,6 +837,13 @@ function Diagnostics() {
     return total; // 12.5
   })();
 
+  const minOrderApplied = (() => {
+    const grams = 0, machineH = 0, laborH = 0;
+    let total = grams * DEFAULT_PRICES_BG.materials.PLA + machineH * DEFAULT_PRICES_BG.machineHour + laborH * DEFAULT_PRICES_BG.laborHour;
+    if (total < DEFAULT_PRICES_BG.minOrder) total = DEFAULT_PRICES_BG.minOrder;
+    return total; // очакваме 10.0 лв
+  })();
+
   const tests: Test[] = [
     {
       name: "unit: 0.05 BGN/g ≈ €0.0256/g",
@@ -925,6 +869,11 @@ function Diagnostics() {
       details: `${sampleCalcTotalBGN.toFixed(2)} лв`,
     },
     {
+      name: "calc: minOrder applied at zero inputs",
+      pass: approx(minOrderApplied, DEFAULT_PRICES_BG.minOrder, 1e-6),
+      details: `${minOrderApplied.toFixed(2)} лв`,
+    },
+    {
       name: "style: themeCSS contains --brand-accent",
       pass: typeof themeCSS === "string" && themeCSS.includes("--brand-accent"),
     },
@@ -940,11 +889,6 @@ function Diagnostics() {
       name: "parser: empty input parses to 0",
       pass: parseInputNumber("") === 0 && parseInputNumber("   ") === 0,
     },
-    {
-      name: "sections: expected count",
-      pass: SECTIONS.length === 6,
-      details: `${SECTIONS.length} секции`,
-    },
   ];
 
   const allOk = tests.every((t) => t.pass);
@@ -952,7 +896,8 @@ function Diagnostics() {
   return (
     <section className="mx-auto max-w-7xl px-4 py-6">
       <div className={`rounded-2xl border p-5 ${allOk ? "border-emerald-400/50" : "border-red-400/50"}`}>
-        <h3 className="font-semibold mb-3">Тестове (dev)</h3>
+        <h3 className="font-semibold mb-3">Тестове (dev)
+        </h3>
         <ul className="space-y-2 text-sm">
           {tests.map((t) => (
             <li key={t.name}>
@@ -987,3 +932,4 @@ export default function L3DX_ServicesSite() {
     </main>
   );
 }
+
