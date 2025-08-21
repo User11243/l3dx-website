@@ -90,20 +90,6 @@ const DEFAULT_PRICES_BG = {
 function BrandTheme() {
   return <style jsx global>{themeCSS}</style>;
 }
-      :root{ --brand-blue-start:${BRAND.blueStart}; --brand-blue-end:${BRAND.blueEnd}; --brand-accent:${BRAND.gold}; }
-      .brand-gradient{ background-image: linear-gradient(135deg, var(--brand-blue-start), var(--brand-blue-end)); }
-      .btn-primary{ background: var(--brand-accent); color: #111; border-radius: 0.75rem; padding: 0.5rem 0.75rem; }
-      .btn-primary:hover{ filter: brightness(0.95); }
-      .btn-outline{ border: 1px solid var(--brand-accent); color: var(--brand-accent); border-radius: 0.75rem; padding: 0.5rem 0.75rem; background: transparent; }
-      .btn-outline:hover{ background: rgba(242,176,30,0.08); }
-      .brand-chip{ border-color: rgba(242,176,30,0.5) !important; color: #111; background: rgba(242,176,30,0.06); }
-      .brand-card{ border-color: rgba(30,102,245,0.18) !important; }
-      .brand-link{ color: var(--brand-accent); }
-      .nav-link{ opacity:0.9; }
-      .nav-link.active{ color: var(--brand-accent); font-weight:600; }
-    `}</style>
-  );
-}
 
 function Currency({ bgn }: { bgn: number }) {
   const eur = bgn / FIXED_EUR_RATE;
@@ -285,7 +271,7 @@ function Hero() {
             <figure className="rounded-3xl overflow-hidden border brand-card bg-black/5">
               <img src={PRINTER_IMG} alt="Нашият 3D принтер" loading="lazy" className="w-full h-auto object-cover" />
             </figure>
-            <p className="mt-3 text-xs opacity-70">*Реалният принтер, с който работим.</p>
+            <p className=\"mt-3 text-xs opacity-70\">Реалният принтер, с който работим.<\/p>
           </div>
         </div>
       </div>
