@@ -520,6 +520,39 @@ export default function L3DX_ServicesSite() {
       <Pricing />
       <Order />
       <FAQ />
+      {/* Diagnostics е премахнат */}
+      <Contacts />
+      <Footer />
+      {/* Sticky CTA */}
+      <a href="#order" className="fixed bottom-5 right-5 inline-flex items-center gap-2 btn-primary shadow-lg">
+        <Printer className="h-4 w-4" /> Поръчай печат
+      </a>
+    </main>
+  );
+}
+
+function Footer() {
+  return (
+    <footer className="border-t border-neutral-900/10 dark:border-white/10 py-10">
+      <div className="mx-auto max-w-7xl px-4 text-sm flex flex-col md:flex-row items-center justify-between gap-4">
+        <p className="opacity-70">© {new Date().getFullYear()} L3DX • Всички права запазени</p>
+        <div className="opacity-70">Цени в BGN и EUR (1 EUR = 1.95583 BGN)</div>
+      </div>
+    </footer>
+  );
+}
+
+export default function L3DX_ServicesSite() {
+  return (
+    <main className="text-neutral-900 dark:text-neutral-200 bg-white dark:bg-neutral-900">
+      <BrandTheme />
+      <Nav />
+      <Hero />
+      <Services />
+      <Materials />
+      <Pricing />
+      <Order />
+      <FAQ />
 <Contacts />
       <Footer />
       {/* Sticky CTA */}
