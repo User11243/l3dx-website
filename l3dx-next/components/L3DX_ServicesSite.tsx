@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo, useState, useEffect } from "react";
+import React, { useMemo, useState, useEffect, useRef } from "react";
 import {
   Printer,
   Boxes,
@@ -46,6 +46,20 @@ const themeCSS = `
   .brand-link{ color: var(--brand-accent); }
   .nav-link{ opacity:0.9; }
   .nav-link.active{ color: var(--brand-accent); font-weight:600; }
+  /* Soft panels in brand theme */
+  .panel-accent{ background: rgba(242,176,30,0.08); border-color: rgba(242,176,30,0.35) !important; }
+  .panel-accent-strong{ background: rgba(242,176,30,0.12); border-color: rgba(242,176,30,0.45) !important; }
+  .panel-blue{ background: linear-gradient(0deg, rgba(14,78,197,0.07), rgba(30,102,245,0.07)); border-color: rgba(30,102,245,0.28) !important; }
+  /* Form controls themed */
+  .form-control{ background: rgba(255,255,255,0.02); border:1px solid rgba(0,0,0,0.12); border-radius: 0.75rem; padding: 0.5rem 0.75rem; }
+  .dark .form-control{ background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.15); }
+  .form-control:focus{ outline: none; border-color: var(--brand-accent); box-shadow: 0 0 0 3px rgba(242,176,30,0.25); }
+  select.form-control{ appearance: none; -webkit-appearance: none; -moz-appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='none' viewBox='0 0 24 24' stroke='%23F2B01E' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position: right .75rem center; background-size: 16px 16px; padding-right: 2rem; }
+  input[type="number"].form-control::-webkit-outer-spin-button,
+  input[type="number"].form-control::-webkit-inner-spin-button{ -webkit-appearance: none; margin: 0; }
+  input[type="number"].form-control{ -moz-appearance: textfield; }
+  input[type="checkbox"]{ accent-color: var(--brand-accent); }
+  ::placeholder{ opacity: .6; }
 `;
 
 // Лого: по подразбиране търси файл от public/logo.jpg. Ако липсва или гръмне зареждането — пада обратно към вграденото data URI.
@@ -106,6 +120,68 @@ function CurrencyUnit({ bgn, unit }: { bgn: number; unit?: string }) {
     <span className="tabular-nums">
       {bgn.toFixed(2)} лв{unit ? `/${unit}` : ""} <span className="opacity-60">/ €{eur.toFixed(2)}{unit ? `/${unit}` : ""}</span>
     </span>
+  );
+}
+
+// Themed dropdown (brand-styled) used in the calculator instead of native <select>
+function ThemedSelect<T extends string>({
+  value,
+  options,
+  onChange,
+}: {
+  value: T;
+  options: readonly T[] | T[];
+  onChange: (v: T) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const onDoc = (e: MouseEvent | TouchEvent) => {
+      if (!ref.current) return;
+      if (!ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", onDoc);
+    document.addEventListener("touchstart", onDoc);
+    return () => {
+      document.removeEventListener("mousedown", onDoc);
+      document.removeEventListener("touchstart", onDoc);
+    };
+  }, []);
+
+  return (
+    <div className="relative" ref={ref}>
+      <button
+        type="button"
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        onClick={() => setOpen((o) => !o)}
+        className="form-control w-full flex items-center justify-between gap-2"
+      >
+        <span className="truncate">{String(value)}</span>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="opacity-80"><path d="M6 9l6 6 6-6"></path></svg>
+      </button>
+      {open && (
+        <div className="absolute z-30 mt-1 w-full rounded-xl border brand-card shadow-lg overflow-hidden bg-white dark:bg-neutral-900">
+          <ul role="listbox" className="max-h-60 overflow-auto py-1">
+            {options.map((opt) => (
+              <li key={String(opt)}>
+                <button
+                  type="button"
+                  className={`w-full text-left px-3 py-2 hover:bg-neutral-100 dark:hover:bg-neutral-800 ${String(opt) === String(value) ? "bg-neutral-100 dark:bg-neutral-800 font-medium" : ""}`}
+                  onClick={() => {
+                    onChange(opt as T);
+                    setOpen(false);
+                  }}
+                >
+                  {String(opt)}
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -535,17 +611,11 @@ function Pricing() {
           <div className="mt-4 grid md:grid-cols-3 gap-4 text-sm">
             <label className="grid gap-1">
               Материал
-              <select
+              <ThemedSelect
                 value={mat}
-                onChange={(e) => setMat(e.target.value as any)}
-                className="rounded-xl border border-neutral-900/10 dark:border-white/10 bg-transparent px-3 py-2"
-              >
-                {Object.keys(pricesBG.materials).map((m) => (
-                  <option key={m} value={m}>
-                    {m}
-                  </option>
-                ))}
-              </select>
+                options={Object.keys(pricesBG.materials) as (keyof typeof DEFAULT_PRICES_BG.materials)[]}
+                onChange={(v) => setMat(v as any)}
+              />
             </label>
             <label className="grid gap-1">
               Грамаж (г)
@@ -554,7 +624,7 @@ function Pricing() {
                 min={0}
                 value={gramsStr}
                 onChange={(e) => setGramsStr(e.target.value)}
-                className="rounded-xl border border-neutral-900/10 dark:border-white/10 bg-transparent px-3 py-2"
+                className="form-control"
               />
             </label>
             <label className="grid gap-1">
@@ -564,7 +634,7 @@ function Pricing() {
                 min={0}
                 value={machineHStr}
                 onChange={(e) => setMachineHStr(e.target.value)}
-                className="rounded-xl border border-neutral-900/10 dark:border-white/10 bg-transparent px-3 py-2"
+                className="form-control"
               />
             </label>
             <label className="grid gap-1">
@@ -574,7 +644,7 @@ function Pricing() {
                 min={0}
                 value={laborHStr}
                 onChange={(e) => setLaborHStr(e.target.value)}
-                className="rounded-xl border border-neutral-900/10 dark:border-white/10 bg-transparent px-3 py-2"
+                className="form-control"
               />
             </label>
             <label className="inline-flex items-center gap-2 mt-2">
@@ -592,7 +662,7 @@ function Pricing() {
             <div className="rounded-xl border brand-card p-3">
               Ръчна работа: <span className="font-semibold"><Currency bgn={result.laborCost} /></span>
             </div>
-            <div className="rounded-xl border brand-card p-3 bg-neutral-50 dark:bg:white/5">
+            <div className="rounded-xl border brand-card p-3 panel-accent">
               Общо: <span className="font-semibold text-lg"><Currency bgn={result.total} /></span>
             </div>
           </div>
@@ -619,7 +689,7 @@ function Pricing() {
                         materials: { ...p.materials, [name]: Number(e.target.value) },
                       }))
                     }
-                    className="rounded-xl border border-neutral-900/10 dark:border-white/10 bg-transparent px-3 py-2"
+                    className="form-control"
                   />
                 </label>
               ))}
@@ -631,7 +701,7 @@ function Pricing() {
                   step={0.1}
                   value={pricesBG.machineHour}
                   onChange={(e) => setPricesBG((p) => ({ ...p, machineHour: Number(e.target.value) }))}
-                  className="rounded-xl border border-neutral-900/10 dark:border-white/10 bg-transparent px-3 py-2"
+                  className="form-control"
                 />
               </label>
               <label className="grid gap-1">
@@ -642,7 +712,7 @@ function Pricing() {
                   step={0.1}
                   value={pricesBG.laborHour}
                   onChange={(e) => setPricesBG((p) => ({ ...p, laborHour: Number(e.target.value) }))}
-                  className="rounded-xl border border-neutral-900/10 dark:border-white/10 bg-transparent px-3 py-2"
+                  className="form-control"
                 />
               </label>
               <label className="grid gap-1">
@@ -653,7 +723,7 @@ function Pricing() {
                   step={0.1}
                   value={pricesBG.minOrder}
                   onChange={(e) => setPricesBG((p) => ({ ...p, minOrder: Number(e.target.value) }))}
-                  className="rounded-xl border border-neutral-900/10 dark:border-white/10 bg-transparent px-3 py-2"
+                  className="form-control"
                 />
               </label>
             </div>
@@ -676,21 +746,21 @@ function Order() {
             <label className="grid gap-1">
               Име
               <input
-                className="rounded-xl border border-neutral-900/10 dark:border-white/10 bg-transparent px-3 py-2"
+                className="form-control"
                 placeholder="Иван Иванов"
               />
             </label>
             <label className="grid gap-1">
               Имейл
               <input
-                className="rounded-xl border border-neutral-900/10 dark:border-white/10 bg-transparent px-3 py-2"
+                className="form-control"
                 placeholder="you@example.com"
               />
             </label>
             <label className="grid gap-1">
               Линк към модел
               <input
-                className="rounded-xl border border-neutral-900/10 dark:border-white/10 bg-transparent px-3 py-2"
+                className="form-control"
                 placeholder="https://www.printables.com/..."
               />
             </label>
@@ -698,7 +768,7 @@ function Order() {
               Описание
               <textarea
                 rows={4}
-                className="rounded-xl border border-neutral-900/10 dark:border-white/10 bg-transparent px-3 py-2"
+                className="form-control"
                 placeholder="Материал, цвят, размер, изисквания, срок..."
               />
             </label>
@@ -932,4 +1002,3 @@ export default function L3DX_ServicesSite() {
     </main>
   );
 }
-
