@@ -304,8 +304,8 @@ function Hero() {
       <div className="mx-auto max-w-7xl px-4 pt-16 md:pt-24 pb-10 md:pb-16">
         <div className="grid md:grid-cols-2 gap-8 items-center">
           <div>
-            <div className="inline-flex items-center gap-2 text-xs px-2 py-1 rounded-full border brand-chip mb-3">
-              <CheckCircle2 className="h-3.5 w-3.5" /> Бързи срокове • Високо качество • Двувалутни цени (BGN/€)
+            <div className="inline-flex items-center gap-2 text-xs px-2 py-1 rounded-full border brand-chip mb-3" style={{color:"#fff"}}>
+              <CheckCircle2 className="h-3.5 w-3.5" /> Бързи срокове • Високо качество • Доволни клиенти
             </div>
             <h1 className="text-4xl md:text-5xl font-semibold leading-tight tracking-tight">
               3D принтиране по поръчка от <span className="underline decoration-2 underline-offset-4">L3DX</span>
@@ -738,65 +738,7 @@ function Order() {
   return (
     <Section id="order" title="Поръчка" subtitle="Изпратете линк към модела или кратко описание. Ще се върнем с оферта и срок.">
       <div className="grid lg:grid-cols-2 gap-6">
-        <div className="rounded-2xl border brand-card p-5">
-          <h3 className="font-semibold text-lg flex items-center gap-2">
-            <Upload className="h-5 w-5" /> Форма за запитване
-          </h3>
-          <form className="mt-4 grid gap-3 text-sm" onSubmit={(e) => e.preventDefault()}>
-            <label className="grid gap-1">
-              Име
-              <input
-                className="form-control"
-                placeholder="Иван Иванов"
-              />
-            </label>
-            <label className="grid gap-1">
-              Имейл
-              <input
-                className="form-control"
-                placeholder="you@example.com"
-              />
-            </label>
-            <label className="grid gap-1">
-              Линк към модел
-              <input
-                className="form-control"
-                placeholder="https://www.printables.com/..."
-              />
-            </label>
-            <label className="grid gap-1">
-              Описание
-              <textarea
-                rows={4}
-                className="form-control"
-                placeholder="Материал, цвят, размер, изисквания, срок..."
-              />
-            </label>
-            <div className="flex items-center justify-between">
-              <p className="text-xs opacity-70">* Може да изпратите и директно имейл с файлове/линк.</p>
-              <a
-                href="mailto:l3dx@abv.bg?subject=Запитване%20за%203D%20печат%20(L3DX)"
-                className="inline-flex items-center gap-2 btn-primary"
-              >
-                <Mail className="h-4 w-4" /> Изпрати имейл
-              </a>
-            </div>
-          </form>
-        </div>
-        <div className="rounded-2xl border brand-card p-5">
-          <h3 className="font-semibold text-lg flex items-center gap-2">
-            <Shield className="h-5 w-5" /> Политики
-          </h3>
-          <ul className="mt-3 space-y-2 text-sm">
-            <li>• Персонализирани стоки (по заявка) са извън обхвата на 14-дневния отказ за онлайн покупки.</li>
-            <li>• Рекламации: покриваме дефекти от изработка; дизайнът на модела е отговорност на клиента.</li>
-            <li>• За поръчки над определена сума може да изискаме аванс (30–50%).</li>
-            <li>• Данъчни документи според начина на плащане.</li>
-          </ul>
-          <p className="mt-3 text-xs opacity-70">
-            Пълни Общи условия и Политика за лични данни ще бъдат публикувани на l3dx.bg.
-          </p>
-        </div>
+        
       </div>
     </Section>
   );
